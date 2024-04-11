@@ -1,0 +1,56 @@
+
+
+```r
+
+# Download HMD Canadian death rate data, convert to excel and clean up.
+# Load necessary libraries
+library(readxl)
+
+# Read the Excel file
+Q <- read_excel("~/Downloads/cMx_1x1.xlsx", na = ".")
+
+# Clean up the data to remove NAs
+Q <- Q[!is.na(Q$Age),]
+
+# Extract cohorts
+Q1960 <- subset(Q, Year == 1960)
+Q1940 <- subset(Q, Year == 1940)
+Q1925 <- subset(Q, Year == 1925)
+
+# Function to convert death rates to life table
+convert_to_life_table <- function(cohort_data) {
+  female_survival <- 100000 * cumprod(1 - cohort_data$Female)
+  male_survival <- 100000 * cumprod(1 - cohort_data$Male)
+  return(list(Female = female_survival, Male = male_survival))
+}
+
+# Convert death rates to life table for each cohort
+life_table_1960 <- convert_to_life_table(Q1960)
+life_table_1940 <- convert_to_life_table(Q1940)
+life_table_1925 <- convert_to_life_table(Q1925)
+
+# Function to get 50 year survival rate
+get_50_year_survival_rate <- function(life_table) {
+  return(life_table[50] / 100000)
+}
+
+# Calculate 50 year survival rate for each cohort and gender
+survival_1960_female <- get_50_year_survival_rate(life_table_1960$Female)
+survival_1960_male <- get_50_year_survival_rate(life_table_1960$Male)
+
+survival_1940_female <- get_50_year_survival_rate(life_table_1940$Female)
+survival_1940_male <- get_50_year_survival_rate(life_table_1940$Male)
+
+survival_1925_female <- get_50_year_survival_rate(life_table_1925$Female)
+survival_1925_male <- get_50_year_survival_rate(life_table_1925$Male)
+
+# Prepare results as a table
+results <- data.frame(
+  Cohort = c("1925 cohort", "1940 cohort", "1960 cohort"),
+  Female = c(survival_1925_female, survival_1940_female, survival_1960_female),
+  Male = c(survival_1925_male, survival_1940_male, survival_1960_male)
+)
+
+# Print out the results as a table
+cat("50 year cohort survival rate\n")
+print(results)
